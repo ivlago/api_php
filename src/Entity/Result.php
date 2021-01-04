@@ -52,14 +52,17 @@ class Result {
     private int $result;
 
     /**
-     * @ORM\Column(type="integer")
+     *
      *
      * @Serializer\SerializedName(Result::USER_ATTR)
      * @Serializer\XmlElement(cdata=false)
      * @ORM\ManyToOne(targetEntity="App\Entity\User", inversedBy="user")
-     * @ORM\JoinColumn(name="user", referencedColumnName="id", nullable=FALSE)
+     * @ORM\JoinColumns({
+     *   @ORM\JoinColumn(name="user", referencedColumnName="id", onDelete="cascade")
+     *     })
+     *
      */
-    private int $user;
+    private User $user;
 
     /**
      * @ORM\Column(
@@ -72,10 +75,10 @@ class Result {
     /**
      * Result constructor.
      * @param integer $result
-     * @param integer $user
+     * @param User $user
      * @param DateTime $time
      */
-    public function __construct(int $result, int $user, DateTime $time)
+    public function __construct(int $result, User $user, DateTime $time)
     {
         $this->result = $result;
         $this->user = $user;
@@ -115,17 +118,17 @@ class Result {
     }
 
     /**
-     * @return integer
+     * @return User
      */
-    public function getUser(): int
+    public function getUser(): User
     {
         return $this->user;
     }
 
     /**
-     * @param integer $user
+     * @param User $user
      */
-    public function setUser(int $user): void
+    public function setUser(User $user): void
     {
         $this->user = $user;
     }

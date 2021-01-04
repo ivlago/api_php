@@ -245,16 +245,18 @@ class ApiResultsController extends AbstractController {
      */
     public function postAction(Request $request): Response
     {
-        // Puede crear un resultado sólo si tiene ROLE_ADMIN
-        if (!$this->isGranted(self::ROLE_ADMIN)) {
+        $body = $request->getContent();
+        $postData = json_decode($body, true);
+        $format = Utils::getFormat($request);
+
+        // Admin puede retocar todos y user solo los suyos
+        if ((!$this->isGranted(self::ROLE_ADMIN) &&
+            ($this->getUser()->getId() !== $postData[Result::USER_ATTR]))) {
             throw new HttpException(   // 403
                 Response::HTTP_FORBIDDEN,
                 '`Forbidden`: you don\'t have permission to access'
             );
         }
-        $body = $request->getContent();
-        $postData = json_decode($body, true);
-        $format = Utils::getFormat($request);
 
         if (!isset($postData[Result::RESULT_ATTR], $postData[Result::USER_ATTR])) {
             // 422 - Unprocessable Entity -> Faltan datos
@@ -266,12 +268,12 @@ class ApiResultsController extends AbstractController {
             );
         }
 
-        // hay datos -> procesarlos
+        // hay datos de user -> procesarlos
         $user_exist = $this->entityManager
             ->getRepository(User::class)
             ->findOneBy([ 'id' => $postData[Result::USER_ATTR] ]);
 
-        if (null !== $user_exist) {    // 400 - Bad Request
+        if (null === $user_exist) {    // 400 - Bad Request
             $message = new Message(Response::HTTP_BAD_REQUEST, Response::$statusTexts[400]);
             return Utils::apiResponse(
                 $message->getCode(),
@@ -284,7 +286,7 @@ class ApiResultsController extends AbstractController {
         $date = new DateTime('now');
         $result = new Result(
             $postData[Result::RESULT_ATTR],
-            $postData[Result::USER_ATTR],
+            $user_exist,
             $date
         );
 
@@ -326,19 +328,19 @@ class ApiResultsController extends AbstractController {
      *     message="`Unauthorized`: Invalid credentials."
      * )
      */
-    public function putAction(Request $request, int $resultId): Response
-    {
+    public function putAction(Request $request, int $resultId): Response {
+        $body = $request->getContent();
+        $postData = json_decode($body, true);
+        $format = Utils::getFormat($request);
+
         // Puede editar otro usuario diferente sólo si tiene ROLE_ADMIN
-/*        if (($this->getResult()->getId() !== $resultId)
+        if (($this->getUser()->getId() !== $postData[Result::USER_ATTR])
             && !$this->isGranted(self::ROLE_ADMIN)) {
             throw new HttpException(   // 403
                 Response::HTTP_FORBIDDEN,
                 "`Forbidden`: you don't have permission to access"
             );
-        }*/
-        $body = $request->getContent();
-        $postData = json_decode($body, true);
-        $format = Utils::getFormat($request);
+        }
 
         $result = $this->entityManager
             ->getRepository(Result::class)
