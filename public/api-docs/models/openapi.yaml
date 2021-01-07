@@ -418,9 +418,9 @@ components:
           type: integer
           format: int64
         user:
-          description: 'User id'
-          type: integer
-          format: int64
+          description: 'User'
+          type: string
+          format: User
         time:
           description: 'Time result'
           type: string
@@ -463,7 +463,7 @@ components:
 
   responses:
     400_BadRequest_Response:
-      description: "`BAD REQUEST`: e-mail already exists"
+      description: "`BAD REQUEST`: e-mail already exists in User case"
       content:
         application/json:
           schema:
@@ -499,7 +499,8 @@ components:
             response-404:
               $ref: '#/components/examples/response-404'
     422_UnprocessableEntity_Response:
-      description: "`UNPROCESSABLE ENTITY`: e-mail or password is left out"
+      description: "`UNPROCESSABLE ENTITY`: e-mail or password is left out in User case,
+                    result or user is left in Result case"
       content:
         application/json:
           schema:
@@ -546,9 +547,9 @@ components:
                 type: integer
                 format: int64
               user:
-                description: 'User id'
-                type: integer
-                format: int64
+                description: 'User'
+                type: string
+                format: User
               time:
                 description: 'Time'
                 type: string
@@ -603,7 +604,7 @@ components:
     response-400:
       value:
         code: 400
-        message: 'BAD REQUEST: e-mail already exists'
+        message: 'BAD REQUEST: e-mail already exists in User case'
     response-401:
       value:
         code: 401
@@ -619,7 +620,8 @@ components:
     response-422:
       value:
         code: 422
-        message: 'UNPROCESSABLE ENTITY: e-mail or password is left out'
+        message: 'UNPROCESSABLE ENTITY: e-mail or password is left out in User case,
+        result or user is left in Result case'
 
   securitySchemes:
     MiWApiSecurity:

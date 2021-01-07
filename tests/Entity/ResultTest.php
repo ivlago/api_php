@@ -12,6 +12,7 @@
 namespace App\Tests\Entity;
 
 use App\Entity\Result;
+use App\Entity\User;
 use DateTime;
 use Exception;
 use Faker\Factory as FakerFactoryAlias;
@@ -26,8 +27,7 @@ use PHPUnit\Framework\TestCase;
  * @group   entities
  * @coversDefaultClass \App\Entity\Result
  */
-class ResultTest extends TestCase
-{
+class ResultTest extends TestCase {
 
     protected static Result $resultado;
 
@@ -39,7 +39,9 @@ class ResultTest extends TestCase
      */
     public static function setUpBeforeClass(): void
     {
-        // self::$resultado = new Result();
+        $user = new User('email@dominio.com', 'password', ['ROLE_USER']);
+        $date = new DateTime('2020-01-01T15:03:01.012345Z');
+        self::$resultado = new Result(214, $user, $date);
         self::$faker = FakerFactoryAlias::create('es_ES');
     }
 
@@ -48,15 +50,13 @@ class ResultTest extends TestCase
      *
      * @return void
      */
-    public function testConstructor(): void
-    {
+    public function testConstructor(): void {
+        $user = new User('email@dominio.com', 'password', ['ROLE_USER']);
         $date = new DateTime('2020-01-01T15:03:01.012345Z');
-        $resultado = new Result(214, 12, $date);
-        echo 'Resultado '.$resultado;
-        self::assertEmpty($resultado->getResult());
-        self::assertEmpty($resultado->getUser());
-        self::assertEmpty($resultado->getTime());
-        //self::assertEquals(3, $resultado->getId());
+        $resultado = new Result(214, $user, $date);
+
+        self::assertEquals(214, $resultado->getResult());
+        self::assertEquals('email@dominio.com',$resultado->getUser()->getEmail());
     }
 
     /**
@@ -77,8 +77,8 @@ class ResultTest extends TestCase
      */
     public function testGetSetResult(): void
     {
-        $result = self::$faker->result;
-        self::$resultado->setEmail($result);
+        $result = 36741;
+        self::$resultado->setResult($result);
         static::assertSame(
             $result,
             self::$resultado->getResult()
@@ -93,7 +93,9 @@ class ResultTest extends TestCase
      */
     public function testGetSetUser(): void
     {
-        $user = self::$faker->user;
+        $email = self::$faker->email;
+        $password = self::$faker->password;
+        $user = new User($email, $password);
         self::$resultado->setUser($user);
         static::assertSame(
                 $user,
@@ -108,7 +110,7 @@ class ResultTest extends TestCase
      */
     public function testGetSetTime(): void
     {
-        $time = self::$faker->time;
+        $time = new DateTime('now');
         self::$resultado->setTime($time);
         static::assertSame(
             $time,

@@ -3,33 +3,34 @@
 namespace App\Tests\Controller;
 
 use App\Entity\Message;
+use App\Entity\Result;
 use App\Entity\User;
 use Faker\Factory as FakerFactoryAlias;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Class ApiUsersControllerTest
+ * Class ApiResultsControllerTest
  *
  * @package App\Tests\Controller
  * @group   controllers
  *
  * @coversDefaultClass \App\Controller\ApiUsersController
  */
-class ApiUsersControllerTest extends BaseTestCase
+class ApiResultsControllerTest extends BaseTestCase
 {
-    private const RUTA_API = '/api/v1/users';
+    private const RUTA_API = '/api/v1/results';
 
     /**
-     * Test OPTIONS /users[/userId] 204 No Content
+     * Test OPTIONS /results[/resultId] 204 No Content
      *
      * @covers ::__construct
      * @covers ::optionsAction
      * @return void
      */
-    public function testOptionsUserAction204NoContent(): void
+    public function testOptionsResultAction204NoContent(): void
     {
-        // OPTIONS /api/v1/users
+        // OPTIONS /api/v1/results
         self::$client->request(
             Request::METHOD_OPTIONS,
             self::RUTA_API
@@ -85,17 +86,16 @@ class ApiUsersControllerTest extends BaseTestCase
 //    }
 
     /**
-     * Test POST /users 201 Created
+     * Test POST /results 201 Created
      *
-     * @return array user data
+     * @return array result data
      */
-    public function testPostUserAction201Created(): array
-    {
+    public function testPostResultAction201Created(): array {
         $role = self::$faker->word;
         $p_data = [
-            User::EMAIL_ATTR => self::$faker->email,
-            User::PASSWD_ATTR => self::$faker->password,
-            User::ROLES_ATTR => [ $role ],
+            Result::RESULT_ATTR => 214,
+            Result::USER_ATTR => 1,
+            Result::TIME_ATTR => new \DateTime('now'),
         ];
 
         // 201
@@ -114,22 +114,20 @@ class ApiUsersControllerTest extends BaseTestCase
         self::assertTrue($response->isSuccessful());
         self::assertNotNull($response->headers->get('Location'));
         self::assertJson($response->getContent());
-        $user = json_decode($response->getContent(), true);
-        self::assertNotEmpty($user['user']['id']);
-        self::assertSame($p_data[User::EMAIL_ATTR], $user['user'][User::EMAIL_ATTR]);
-        self::assertContains(
-            $role,
-            $user['user'][User::ROLES_ATTR]
-        );
+        $result = json_decode($response->getContent(), true);
 
-        return $user['user'];
+        self::assertNotEmpty($result['result']['id']);
+        self::assertSame($p_data[Result::RESULT_ATTR], $result['result'][Result::RESULT_ATTR]);
+        self::assertSame($p_data[Result::USER_ATTR], $result['result'][Result::USER_ATTR]['id']);
+
+        return $result['result'];
     }
 
     /**
-     * Test GET /users 200 Ok
+     * Test GET /results 200 Ok
      *
      * @return void
-     * @depends testPostUserAction201Created
+     * @depends testPostResultAction201Created
      */
     public function testCGetAction200Ok(): void
     {
@@ -139,23 +137,23 @@ class ApiUsersControllerTest extends BaseTestCase
         self::assertTrue($response->isSuccessful());
         self::assertNotNull($response->getEtag());
         self::assertJson($response->getContent());
-        $users = json_decode($response->getContent(), true);
-        self::assertArrayHasKey('users', $users);
+        $results = json_decode($response->getContent(), true);
+        self::assertArrayHasKey('results', $results);
     }
 
     /**
-     * Test GET /users 200 Ok (XML)
+     * Test GET /results 200 Ok (XML)
      *
-     * @param   array $user user returned by testPostUserAction201()
+     * @param   array $result result returned by testPostResultAction201()
      * @return  void
-     * @depends testPostUserAction201Created
+     * @depends testPostResultAction201Created
      */
-    public function testCGetAction200XmlOk(array $user): void
+    public function testCGetAction200XmlOk(array $result): void
     {
         $headers = $this->getTokenHeaders();
         self::$client->request(
             Request::METHOD_GET,
-            self::RUTA_API . '/' . $user['id'] . '.xml',
+            self::RUTA_API . '/' . $result['id'] . '.xml',
             [],
             [],
             $headers
@@ -167,18 +165,18 @@ class ApiUsersControllerTest extends BaseTestCase
     }
 
     /**
-     * Test GET /users/{userId} 200 Ok
+     * Test GET /results/{resultId} 200 Ok
      *
-     * @param   array $user user returned by testPostUserAction201()
+     * @param   array $result result returned by testPostResultAction201()
      * @return  void
-     * @depends testPostUserAction201Created
+     * @depends testPostResultAction201Created
      */
-    public function testGetUserAction200Ok(array $user): void
+    public function testGetResultAction200Ok(array $result): void
     {
         $headers = $this->getTokenHeaders();
         self::$client->request(
             Request::METHOD_GET,
-            self::RUTA_API . '/' . $user['id'],
+            self::RUTA_API . '/' . $result['id'],
             [],
             [],
             $headers
@@ -188,24 +186,24 @@ class ApiUsersControllerTest extends BaseTestCase
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         self::assertNotNull($response->getEtag());
         self::assertJson((string) $response->getContent());
-        $user_aux = json_decode((string) $response->getContent(), true);
-        self::assertSame($user['id'], $user_aux['user']['id']);
+        $result_aux = json_decode((string) $response->getContent(), true);
+        self::assertSame($result['id'], $result_aux['result']['id']);
     }
 
     /**
-     * Test POST /users 400 Bad Request
+     * Test POST /results 400 Bad Request
      *
-     * @param   array $user user returned by testPostUserAction201()
+     * @param   array $result result returned by testPostResultAction201()
      * @return  void
-     * @depends testPostUserAction201Created
+     * @depends testPostResultAction201Created
      */
-    public function testPostUserAction400BadRequest(array $user): void
+    public function testPostResultAction400BadRequest(array $result): void
     {
         $headers = $this->getTokenHeaders();
 
         $p_data = [
-            User::EMAIL_ATTR => $user[User::EMAIL_ATTR], // mismo e-mail
-            User::PASSWD_ATTR => self::$faker->password,
+            Result::RESULT_ATTR => $result[Result::RESULT_ATTR],
+            Result::USER_ATTR => 3
         ];
         self::$client->request(
             Request::METHOD_POST,
@@ -231,25 +229,25 @@ class ApiUsersControllerTest extends BaseTestCase
     }
 
     /**
-     * Test PUT /users/{userId} 209 Content Returned
+     * Test PUT /results/{resultId} 209 Content Returned
      *
-     * @param   array $user user returned by testPostUserAction201()
-     * @return  array modified user data
-     * @depends testPostUserAction201Created
+     * @param   array $result result returned by testPostResultAction201()
+     * @return  array modified result data
+     * @depends testPostResultAction201Created
      */
-    public function testPutUserAction209ContentReturned(array $user): array
+    public function testPutResultAction209ContentReturned(array $result): array
     {
         $headers = $this->getTokenHeaders();
         $role = self::$faker->word;
         $p_data = [
-            User::EMAIL_ATTR => self::$faker->email,
-            User::PASSWD_ATTR => self::$faker->password,
-            User::ROLES_ATTR => [ $role ],
+            Result::RESULT_ATTR => 123,
+            Result::USER_ATTR => 1,
+            Result::TIME_ATTR => new \DateTime('now'),
         ];
 
         self::$client->request(
             Request::METHOD_PUT,
-            self::RUTA_API . '/' . $user['id'],
+            self::RUTA_API . '/' . $result['id'],
             [],
             [],
             $headers,
@@ -259,76 +257,30 @@ class ApiUsersControllerTest extends BaseTestCase
 
         self::assertSame(209, $response->getStatusCode());
         self::assertJson((string) $response->getContent());
-        $user_aux = json_decode((string) $response->getContent(), true);
-        self::assertSame($user['id'], $user_aux['user']['id']);
-        self::assertSame($p_data[User::EMAIL_ATTR], $user_aux['user'][User::EMAIL_ATTR]);
-        self::assertContains(
-            $role,
-            $user_aux['user'][User::ROLES_ATTR]
-        );
-
-        return $user_aux['user'];
+        $result_aux = json_decode((string) $response->getContent(), true);
+        self::assertSame($result['id'], $result_aux['result']['id']);
+        self::assertSame($p_data[Result::RESULT_ATTR], $result_aux['result'][Result::RESULT_ATTR]);
+        self::assertSame($p_data[Result::USER_ATTR], $result_aux['result'][Result::USER_ATTR]['id']);
+        return $result_aux['result'];
     }
 
     /**
-     * Test PUT /users/{userId} 400 Bad Request
+     * Test DELETE /results/{resultId} 204 No Content
      *
-     * @param   array $user user returned by testPutUserAction209()
-     * @return  void
-     * @depends testPutUserAction209ContentReturned
-     */
-    public function testPutUserAction400BadRequest(array $user): void
-    {
-        $headers = $this->getTokenHeaders();
-        // e-mail already exists
-        $p_data = [
-            User::EMAIL_ATTR => $user[User::EMAIL_ATTR]
-        ];
-        self::$client->request(
-            Request::METHOD_PUT,
-            self::RUTA_API . '/' . $user['id'],
-            [],
-            [],
-            $headers,
-            json_encode($p_data)
-        );
-        $response = self::$client->getResponse();
-
-        self::assertSame(
-            Response::HTTP_BAD_REQUEST,
-            $response->getStatusCode()
-        );
-        $r_body = (string) $response->getContent();
-        self::assertJson($r_body);
-        self::assertStringContainsString(Message::CODE_ATTR, $r_body);
-        self::assertStringContainsString(Message::MESSAGE_ATTR, $r_body);
-        $r_data = json_decode($r_body, true);
-        self::assertSame(
-            Response::HTTP_BAD_REQUEST,
-            $r_data[Message::CODE_ATTR]
-        );
-        self::assertSame(
-            Response::$statusTexts[400],
-            $r_data[Message::MESSAGE_ATTR]
-        );
-    }
-
-    /**
-     * Test DELETE /users/{userId} 204 No Content
+     * @param   array $result result returned by testPostResultAction201()
+     * @return  int resultId
      *
-     * @param   array $user user returned by testPostUserAction201()
-     * @return  int userId
-     * @depends testPostUserAction201Created
-     * @depends testPostUserAction400BadRequest
-     * @depends testGetUserAction200Ok
-     * @depends testPutUserAction400BadRequest
+     * @depends testPostResultAction201Created
+     * @depends testPostResultAction400BadRequest
+     * @depends testGetResultAction200Ok
+     * @depends testPutResultAction209ContentReturned
      */
-    public function testDeleteUserAction204NoContent(array $user): int
+    public function testDeleteResultAction204NoContent(array $result): int
     {
         $headers = $this->getTokenHeaders();
         self::$client->request(
             Request::METHOD_DELETE,
-            self::RUTA_API . '/' . $user['id'],
+            self::RUTA_API . '/' . $result['id'],
             [],
             [],
             $headers
@@ -341,23 +293,22 @@ class ApiUsersControllerTest extends BaseTestCase
         );
         self::assertEmpty((string) $response->getContent());
 
-        return $user['id'];
+        return $result['id'];
     }
 
     /**
-     * Test POST /users 422 Unprocessable Entity
+     * Test POST /results 422 Unprocessable Entity
      *
-     * @param null|string $email
-     * @param null|string $password
-     * @dataProvider userProvider422
+     * @param null|int $result
+     * @param null|User $user
+     * @dataProvider resultProvider422
      * @return void
      */
-    public function testPostUserAction422UnprocessableEntity(?string $email, ?string $password): void
+    public function testPostResultAction422UnprocessableEntity(?int $result, ?User $user): void
     {
         $headers = $this->getTokenHeaders();
         $p_data = [
-            User::EMAIL_ATTR => $email,
-            User::PASSWD_ATTR => $password
+            Result::RESULT_ATTR => $result,
         ];
 
         self::$client->request(
@@ -390,11 +341,11 @@ class ApiUsersControllerTest extends BaseTestCase
     }
 
     /**
-     * Test GET    /users 401 UNAUTHORIZED
-     * Test POST   /users 401 UNAUTHORIZED
-     * Test GET    /users/{userId} 401 UNAUTHORIZED
-     * Test PUT    /users/{userId} 401 UNAUTHORIZED
-     * Test DELETE /users/{userId} 401 UNAUTHORIZED
+     * Test GET    /results 401 UNAUTHORIZED
+     * Test POST   /results 401 UNAUTHORIZED
+     * Test GET    /results/{resultId} 401 UNAUTHORIZED
+     * Test PUT    /results/{resultId} 401 UNAUTHORIZED
+     * Test DELETE /results/{resultId} 401 UNAUTHORIZED
      *
      * @param string $method
      * @param string $uri
@@ -402,7 +353,7 @@ class ApiUsersControllerTest extends BaseTestCase
      * @return void
      * @uses \App\EventListener\ExceptionListener
      */
-    public function testUserStatus401Unauthorized(string $method, string $uri): void
+    public function testResultStatus401Unauthorized(string $method, string $uri): void
     {
         self::$client->request(
             $method,
@@ -427,28 +378,34 @@ class ApiUsersControllerTest extends BaseTestCase
     }
 
     /**
-     * Test GET    /users/{userId} 404 NOT FOUND
-     * Test PUT    /users/{userId} 404 NOT FOUND
-     * Test DELETE /users/{userId} 404 NOT FOUND
+     * Test GET    /results/{resultId} 404 NOT FOUND
+     * Test PUT    /results/{resultId} 404 NOT FOUND
+     * Test DELETE /results/{resultId} 404 NOT FOUND
      *
      * @param string $method
-     * @param int $userId user id. returned by testDeleteUserAction204()
+     * @param int $resultId result id. returned by testDeleteResultAction204NoContent()
      * @dataProvider routeProvider404
      * @return void
-     * @depends      testDeleteUserAction204NoContent
+     * @depends      testDeleteResultAction204NoContent
+     *
      */
-    public function testUserStatus404NotFound(string $method, int $userId): void
+    public function testResultStatus404NotFound(string $method, int $resultId): void
     {
         $headers = $this->getTokenHeaders(
             self::$role_admin[User::EMAIL_ATTR],
             self::$role_admin[User::PASSWD_ATTR]
         );
+        $p_data = [
+            Result::RESULT_ATTR => self::$faker->numberBetween(0, 1000),
+            Result::USER_ATTR => 2,
+        ];
         self::$client->request(
             $method,
-            self::RUTA_API . '/' . $userId,
+            self::RUTA_API . '/' . $resultId,
             [],
             [],
-            $headers
+            $headers,
+            json_encode($p_data)
         );
         $response = self::$client->getResponse();
 
@@ -462,23 +419,33 @@ class ApiUsersControllerTest extends BaseTestCase
     }
 
     /**
-     * Test POST   /users 403 FORBIDDEN
-     * Test PUT    /users/{userId} 403 FORBIDDEN
-     * Test DELETE /users/{userId} 403 FORBIDDEN
+     * Test POST   /results 403 FORBIDDEN
+     * Test PUT    /results/{resultId} 403 FORBIDDEN
+     * Test DELETE /results/{resultId} 403 FORBIDDEN
      *
      * @param string $method
      * @param string $uri
      * @dataProvider routeProvider403()
      * @return void
      * @uses \App\EventListener\ExceptionListener
+     *
+     * @depends testPostResultAction201Created
+     * @depends testPostResultAction400BadRequest
+     * @depends testGetResultAction200Ok
+     * @depends testPutResultAction209ContentReturned
      */
-    public function testUserStatus403Forbidden(string $method, string $uri): void
+    public function testResultStatus403Forbidden(string $method, string $uri): void
     {
         $headers = $this->getTokenHeaders(
             self::$role_user[User::EMAIL_ATTR],
             self::$role_user[User::PASSWD_ATTR]
         );
-        self::$client->request($method, $uri, [], [], $headers);
+        $p_data = [
+            Result::RESULT_ATTR => self::$faker->numberBetween(0, 1000),
+            Result::USER_ATTR => 343,
+        ];
+        self::$client->request($method, $uri, [], [], $headers,
+            json_encode($p_data));
         $response = self::$client->getResponse();
 
         self::assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode());
@@ -501,20 +468,19 @@ class ApiUsersControllerTest extends BaseTestCase
      */
 
     /**
-     * User provider (incomplete) -> 422 status code
+     * Result provider (incomplete) -> 422 status code
      *
-     * @return array user data
+     * @return array result data
      */
-    public function userProvider422(): array
-    {
+    public function resultProvider422(): array {
         $faker = FakerFactoryAlias::create('es_ES');
-        $email = $faker->email;
-        $password = $faker->password;
+        $result = 324;
+        $user = new User('email@gmail.com', 'pass', ['ROLE_USER']);
 
         return [
-            'no_email'  => [ null,   $password ],
-            'no_passwd' => [ $email, null      ],
-            'nothing'   => [ null,   null      ],
+            'no_result'  => [ null,   $user ],
+            'no_user' => [ $result, null     ],
+            'nothing'   => [ null,   null    ],
         ];
     }
 
